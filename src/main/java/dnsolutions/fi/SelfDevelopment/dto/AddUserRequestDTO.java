@@ -38,6 +38,5 @@ public class AddUserRequestDTO {
     @Size(min = 2, max = 150)
     private String fullName;
 
-    @Valid
-    private Set<UserRoleRequestDTO> roles = new HashSet<>();
+    private Set<@Valid UserRoleRequestDTO> roles = new HashSet<>();
 }
