@@ -1,7 +1,6 @@
 package dnsolutions.fi.SelfDevelopment.service.impl;
 
 import dnsolutions.fi.SelfDevelopment.dto.AddUserRequestDTO;
-import dnsolutions.fi.SelfDevelopment.dto.RoleDTO;
 import dnsolutions.fi.SelfDevelopment.dto.UserRoleRequestDTO;
 import dnsolutions.fi.SelfDevelopment.dto.UserDTO;
 import dnsolutions.fi.SelfDevelopment.entity.User;
