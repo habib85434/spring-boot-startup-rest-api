@@ -8,6 +8,7 @@ import dnsolutions.fi.SelfDevelopment.security.JwtService;
 import dnsolutions.fi.SelfDevelopment.service.AuthService;
 import dnsolutions.fi.SelfDevelopment.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,13 +33,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO login(AuthLoginRequestDTO authLoginRequestDTO) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 authLoginRequestDTO.getUsername(),
                 authLoginRequestDTO.getPassword()
         ));
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(authLoginRequestDTO.getUsername());
-        UserDTO user = userService.getUserByUsername(authLoginRequestDTO.getUsername());
+        String authenticatedUsername = authentication.getName();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(authenticatedUsername);
+        UserDTO user = userService.getUserByUsername(authenticatedUsername);
 
         return buildAuthResponse(userDetails, user, true);
     }
