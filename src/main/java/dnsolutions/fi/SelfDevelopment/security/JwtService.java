@@ -74,6 +74,14 @@ public class JwtService {
         return readClaims(token).get("sub").toString();
     }
 
+    public Instant extractExpiration(String token) {
+        Object expiration = readClaims(token).get("exp");
+        if (!(expiration instanceof Number expirationNumber)) {
+            throw new BadRequestException("Invalid JWT token");
+        }
+        return Instant.ofEpochSecond(expirationNumber.longValue());
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return username.equals(userDetails.getUsername())
@@ -83,11 +91,7 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        Object expiration = readClaims(token).get("exp");
-        if (!(expiration instanceof Number expirationNumber)) {
-            return true;
-        }
-        return Instant.now().getEpochSecond() >= expirationNumber.longValue();
+        return !extractExpiration(token).isAfter(Instant.now());
     }
 
     private boolean hasValidSignature(String token) {

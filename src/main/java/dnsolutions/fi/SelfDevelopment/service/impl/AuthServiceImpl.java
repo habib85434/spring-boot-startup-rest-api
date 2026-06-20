@@ -5,6 +5,7 @@ import dnsolutions.fi.SelfDevelopment.dto.AuthLoginRequestDTO;
 import dnsolutions.fi.SelfDevelopment.dto.AuthResponseDTO;
 import dnsolutions.fi.SelfDevelopment.dto.UserDTO;
 import dnsolutions.fi.SelfDevelopment.security.JwtService;
+import dnsolutions.fi.SelfDevelopment.security.TokenRevocationService;
 import dnsolutions.fi.SelfDevelopment.service.AuthService;
 import dnsolutions.fi.SelfDevelopment.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     public AuthResponseDTO register(AddUserRequestDTO addUserRequestDTO) {
@@ -43,6 +45,19 @@ public class AuthServiceImpl implements AuthService {
         UserDTO user = userService.getUserByUsername(authenticatedUsername);
 
         return buildAuthResponse(userDetails, user, true);
+    }
+
+    @Override
+    public void logout(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return;
+        }
+
+        try {
+            tokenRevocationService.revoke(accessToken, jwtService.extractExpiration(accessToken));
+        } catch (RuntimeException ignored) {
+            // Logout should still clear the refresh cookie even if the access token is already invalid.
+        }
     }
 
     private AuthResponseDTO buildAuthResponse(UserDetails userDetails, UserDTO user, boolean includeRefreshToken) {

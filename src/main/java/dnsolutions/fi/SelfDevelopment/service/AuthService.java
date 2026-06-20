@@ -9,4 +9,6 @@ public interface AuthService {
     AuthResponseDTO register(AddUserRequestDTO addUserRequestDTO);
 
     AuthResponseDTO login(AuthLoginRequestDTO authLoginRequestDTO);
+
+    void logout(String accessToken);
 }
