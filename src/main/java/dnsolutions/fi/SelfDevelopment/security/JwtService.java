@@ -26,16 +26,31 @@ public class JwtService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final byte[] secret;
     private final long expirationMs;
+    private final long refreshExpirationMs;
 
     public JwtService(
             @Value("${application.security.jwt.secret}") String secret,
-            @Value("${application.security.jwt.expiration-ms}") long expirationMs
+            @Value("${application.security.jwt.expiration-ms}") long expirationMs,
+            @Value("${application.security.jwt.refresh-expiration-ms}") long refreshExpirationMs
     ) {
         this.secret = Base64.getDecoder().decode(secret);
         this.expirationMs = expirationMs;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
     public String generateToken(UserDetails userDetails) {
+        return generateToken(userDetails, expirationMs, "access");
+    }
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateToken(userDetails, refreshExpirationMs, "refresh");
+    }
+
+    public long getRefreshExpirationMs() {
+        return refreshExpirationMs;
+    }
+
+    private String generateToken(UserDetails userDetails, long tokenExpirationMs, String tokenUse) {
         Instant now = Instant.now();
         Map<String, Object> header = Map.of(
                 "alg", "HS256",
@@ -44,7 +59,8 @@ public class JwtService {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("sub", userDetails.getUsername());
         claims.put("iat", now.getEpochSecond());
-        claims.put("exp", now.plusMillis(expirationMs).getEpochSecond());
+        claims.put("exp", now.plusMillis(tokenExpirationMs).getEpochSecond());
+        claims.put("token_use", tokenUse);
         claims.put("roles", userDetails.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
@@ -60,7 +76,10 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token) && hasValidSignature(token);
+        return username.equals(userDetails.getUsername())
+                && !isTokenExpired(token)
+                && hasValidSignature(token)
+                && hasTokenUse(token, "access");
     }
 
     private boolean isTokenExpired(String token) {
@@ -74,6 +93,10 @@ public class JwtService {
     private boolean hasValidSignature(String token) {
         String[] parts = splitToken(token);
         return sign(parts[0] + "." + parts[1]).equals(parts[2]);
+    }
+
+    private boolean hasTokenUse(String token, String tokenUse) {
+        return tokenUse.equals(readClaims(token).get("token_use"));
     }
 
     private Map<String, Object> readClaims(String token) {

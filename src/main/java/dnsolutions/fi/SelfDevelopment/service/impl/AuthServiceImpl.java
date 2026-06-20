@@ -27,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponseDTO register(AddUserRequestDTO addUserRequestDTO) {
         UserDTO user = userService.createNewUser(addUserRequestDTO);
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        return buildAuthResponse(userDetails, user);
+        return buildAuthResponse(userDetails, user, false);
     }
 
     @Override
@@ -40,10 +40,14 @@ public class AuthServiceImpl implements AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(authLoginRequestDTO.getUsername());
         UserDTO user = userService.getUserByUsername(authLoginRequestDTO.getUsername());
 
-        return buildAuthResponse(userDetails, user);
+        return buildAuthResponse(userDetails, user, true);
     }
 
-    private AuthResponseDTO buildAuthResponse(UserDetails userDetails, UserDTO user) {
-        return new AuthResponseDTO(jwtService.generateToken(userDetails), "Bearer", user);
+    private AuthResponseDTO buildAuthResponse(UserDetails userDetails, UserDTO user, boolean includeRefreshToken) {
+        AuthResponseDTO authResponse = new AuthResponseDTO(jwtService.generateToken(userDetails), "Bearer", user);
+        if (includeRefreshToken) {
+            authResponse.setRefreshToken(jwtService.generateRefreshToken(userDetails));
+        }
+        return authResponse;
     }
 }
